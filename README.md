@@ -150,6 +150,44 @@ docker exec -it personal-interview-mysql mysql -uroot -ppassword
    docker compose up -d --build
    ```
 
+## Git 커밋 규칙
+
+### 브랜치 네이밍 규칙
+
+브랜치 이름은 다음 형식을 따릅니다:
+
+```
+feat/{이슈번호}-
+```
+
+**예시:**
+- `feat/3-sign-up`
+- `feat/12-login-api`
+- `feat/25-user-profile`
+
+### 커밋 메시지 규칙
+
+커밋 메시지는 다음 형식을 따릅니다:
+
+```
+타입: 커밋 메시지
+```
+
+**타입 목록:**
+- `feat`: 새로운 기능 추가
+- `fix`: 버그 수정
+- `docs`: 문서 수정
+- `style`: 코드 포맷팅, 세미콜론 누락 등 (코드 변경 없음)
+- `refactor`: 코드 리팩토링
+- `test`: 테스트 코드 추가 또는 수정
+- `chore`: 빌드 업무, 패키지 매니저 설정 등
+
+**예시:**
+- `feat: 회원가입 API 구현`
+- `fix: 로그인 시 토큰 검증 오류 수정`
+- `docs: README에 환경 설정 가이드 추가`
+- `refactor: UserService 코드 개선`
+
 ## 추가 정보
 
 - Spring Boot 버전: 4.0.0
