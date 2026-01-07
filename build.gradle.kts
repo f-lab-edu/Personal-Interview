@@ -19,17 +19,25 @@ repositories {
 }
 
 dependencies {
+	// DB
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	runtimeOnly("com.mysql:mysql-connector-j")
+	implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.0")
+
+	// Web
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
-	implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.0")
-	implementation("org.springframework.boot:spring-boot-docker-compose")
-	
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
-	
-	runtimeOnly("com.mysql:mysql-connector-j")
-	
+
+	// DOCKER
+	implementation("org.springframework.boot:spring-boot-docker-compose")
+
+
+
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
