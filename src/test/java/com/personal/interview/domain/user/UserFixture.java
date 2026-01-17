@@ -28,66 +28,55 @@ public class UserFixture {
     // 예상 크기
     public static final int EXPECTED_JOB_COUNT_TWO = 2;
 
-    /**
-     * 기본 SignUpRequest 생성
-     */
     public static SignUpRequest createDefaultSignUpRequest() {
         return new SignUpRequest(
-                DEFAULT_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
                 JOB_CATEGORIES_BACKEND_DEVOPS);
     }
 
-    /**
-     * 단일 Job Category SignUpRequest 생성
-     */
     public static SignUpRequest createSignUpRequestWithSingleJobCategory() {
         return new SignUpRequest(
-                DEFAULT_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
                 JOB_CATEGORIES_BACKEND);
     }
 
-    /**
-     * 이전 이메일로 SignUpRequest 생성
-     */
     public static SignUpRequest createSignUpRequestWithOldEmail() {
         return new SignUpRequest(
-                OLD_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
                 JOB_CATEGORIES_BACKEND);
     }
 
-    /**
-     * 기본 설정으로 User 생성
-     */
     public static User createDefaultUser(PasswordEncoder passwordEncoder) {
-        return User.signUp(createDefaultSignUpRequest(), passwordEncoder);
+        User user = User.signUp(createDefaultSignUpRequest(), passwordEncoder);
+        user.modifyEmail(DEFAULT_EMAIL);
+        return user;
     }
 
-    /**
-     * 단일 Job Category로 User 생성
-     */
     public static User createUserWithSingleJobCategory(PasswordEncoder passwordEncoder) {
-        return User.signUp(createSignUpRequestWithSingleJobCategory(), passwordEncoder);
+        User user = User.signUp(createSignUpRequestWithSingleJobCategory(), passwordEncoder);
+        user.modifyEmail(DEFAULT_EMAIL);
+        return user;
     }
 
-    /**
-     * 이전 이메일로 User 생성 (이메일 변경 테스트용)
-     */
     public static User createUserWithOldEmail(PasswordEncoder passwordEncoder) {
-        return User.signUp(createSignUpRequestWithOldEmail(), passwordEncoder);
+        User user = User.signUp(createSignUpRequestWithOldEmail(), passwordEncoder);
+        user.modifyEmail(OLD_EMAIL);
+        return user;
     }
 
-    /**
-     * ROLE_USER로 승급된 User 생성
-     */
     public static User createUserWithRoleUser(PasswordEncoder passwordEncoder) {
         User user = createDefaultUser(passwordEncoder);
         user.modifyRoleUser();
         return user;
+    }
+    
+    public static SignUpRequest createSignUpRequest() {
+        return new SignUpRequest(
+                DEFAULT_RAW_PASSWORD,
+                DEFAULT_NICKNAME,
+            JOB_CATEGORIES_BACKEND_DEVOPS);
     }
 }
