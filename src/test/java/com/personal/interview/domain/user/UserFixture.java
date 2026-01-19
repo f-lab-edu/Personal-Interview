@@ -4,7 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
-import com.personal.interview.domain.user.entity.SignUpRequest;
+import com.personal.interview.domain.user.entity.dto.SignUpRequest;
 import com.personal.interview.domain.user.entity.User;
 
 public class UserFixture {
@@ -30,6 +30,7 @@ public class UserFixture {
 
     public static SignUpRequest createDefaultSignUpRequest() {
         return new SignUpRequest(
+                OLD_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
                 JOB_CATEGORIES_BACKEND_DEVOPS);
@@ -37,6 +38,7 @@ public class UserFixture {
 
     public static SignUpRequest createSignUpRequestWithSingleJobCategory() {
         return new SignUpRequest(
+                OLD_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
                 JOB_CATEGORIES_BACKEND);
@@ -44,6 +46,7 @@ public class UserFixture {
 
     public static SignUpRequest createSignUpRequestWithOldEmail() {
         return new SignUpRequest(
+                OLD_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
                 JOB_CATEGORIES_BACKEND);
@@ -75,6 +78,7 @@ public class UserFixture {
     
     public static SignUpRequest createSignUpRequest() {
         return new SignUpRequest(
+                OLD_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
             JOB_CATEGORIES_BACKEND_DEVOPS);

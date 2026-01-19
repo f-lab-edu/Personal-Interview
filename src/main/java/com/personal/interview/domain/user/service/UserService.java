@@ -1,9 +1,10 @@
 package com.personal.interview.domain.user.service;
 
-import com.personal.interview.domain.user.entity.SignUpResponse;
+import com.personal.interview.domain.user.entity.dto.SignUpResponse;
 import com.personal.interview.domain.user.entity.User;
-import com.personal.interview.domain.user.entity.SignUpRequest;
+import com.personal.interview.domain.user.entity.dto.SignUpRequest;
 
+import com.personal.interview.domain.user.entity.vo.Email;
 import com.personal.interview.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,10 @@ public class UserService {
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
+        if(userRepository.existsByEmail(new Email(request.email()))) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+
         User user = User.signUp(request, passwordEncoder);
 
         User savedUser = userRepository.save(user);

@@ -11,11 +11,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.personal.interview.domain.user.entity.Email;
+import com.personal.interview.domain.user.entity.vo.Email;
 import com.personal.interview.domain.user.entity.JobCategory;
-import com.personal.interview.domain.user.entity.SignUpRequest;
+import com.personal.interview.domain.user.entity.dto.SignUpRequest;
 import com.personal.interview.domain.user.entity.User;
-import com.personal.interview.domain.user.entity.UserRole;
+import com.personal.interview.domain.user.entity.vo.UserRole;
 
 class UserTest {
 
@@ -31,13 +31,14 @@ class UserTest {
     @Test
     void signUp() {
         var request = new SignUpRequest(
+            "aorl2313@naver.com",
                 "password123",
                 "테스터",
                 List.of("백엔드", "DevOps"));
 
         User user = User.signUp(request, passwordEncoder);
 
-        assertThat(user.getEmail()).isNull();
+        assertThat(user.getEmail()).isEqualTo(new Email(request.email()));
         assertThat(user.getPassword()).isEqualTo(passwordEncoder.encode(request.password()));
         assertThat(user.getNickname()).isEqualTo(request.nickname());
         assertThat(user.getRole()).isEqualTo(UserRole.ROLE_DRAFT);

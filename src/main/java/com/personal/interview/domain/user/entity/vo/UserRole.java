@@ -1,4 +1,4 @@
-package com.personal.interview.domain.user.entity;
+package com.personal.interview.domain.user.entity.vo;
 
 /**
  * 사용자 권한 Enum

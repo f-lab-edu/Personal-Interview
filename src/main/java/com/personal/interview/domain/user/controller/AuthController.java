@@ -1,7 +1,7 @@
 package com.personal.interview.domain.user.controller;
 
-import com.personal.interview.domain.user.entity.SignUpRequest;
-import com.personal.interview.domain.user.entity.SignUpResponse;
+import com.personal.interview.domain.user.entity.dto.SignUpRequest;
+import com.personal.interview.domain.user.entity.dto.SignUpResponse;
 import com.personal.interview.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

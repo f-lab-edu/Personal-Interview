@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import com.personal.interview.domain.user.entity.vo.Email;
+
 class EmailTest {
 
 	@Test

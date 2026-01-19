@@ -1,25 +1,24 @@
 package com.personal.interview.domain.user.service;
 
+import static com.personal.interview.domain.user.UserFixture.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.personal.interview.domain.user.UserFixture;
-import com.personal.interview.domain.user.entity.Email;
 import com.personal.interview.domain.user.entity.JobCategory;
-import com.personal.interview.domain.user.entity.SignUpRequest;
-import com.personal.interview.domain.user.entity.SignUpResponse;
+import com.personal.interview.domain.user.entity.dto.SignUpRequest;
+import com.personal.interview.domain.user.entity.dto.SignUpResponse;
 import com.personal.interview.domain.user.entity.User;
+import com.personal.interview.domain.user.entity.UserId;
+import com.personal.interview.domain.user.entity.vo.Email;
 import com.personal.interview.domain.user.repository.UserRepository;
 
 import jakarta.persistence.EntityManager;
@@ -49,12 +48,12 @@ class UserServiceTest {
 		em.clear();
 
 		// then
-		Optional<User> byId = userRepository.findById(response.userId());
+		Optional<User> byId = userRepository.findById(new UserId(response.userId()));
 		assertTrue(byId.isPresent());
 
 		User user = byId.get();
 
-		assertThat(user.getEmail()).isEqualTo(null);
+		assertThat(user.getEmail()).isEqualTo(new Email(request.email()));
 
 		assertThat(request.jobCategoryNames())
 			.containsSubsequence(user.getJobCategories().stream()
@@ -62,5 +61,21 @@ class UserServiceTest {
 				.toList());
 	}
 
+	@Test
+	void signUpTest_existingEmailFail() {
+		// given
+		SignUpRequest request = createSignUpRequestWithOldEmail();
+
+		userService.signUp(request);
+		em.flush();
+		em.clear();
+
+		assertThat(userRepository.existsByEmail(new Email(request.email())))
+			.isTrue();
+
+		// when & then
+		assertThatThrownBy(() -> userService.signUp(request))
+			.isInstanceOf(IllegalArgumentException.class);
+	}
 
 }

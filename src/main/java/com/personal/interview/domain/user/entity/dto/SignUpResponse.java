@@ -1,8 +1,12 @@
-package com.personal.interview.domain.user.entity;
+package com.personal.interview.domain.user.entity.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.personal.interview.domain.user.entity.JobCategory;
+import com.personal.interview.domain.user.entity.User;
+import com.personal.interview.domain.user.entity.vo.UserRole;
 
 public record SignUpResponse(
     Long userId,
@@ -13,7 +17,7 @@ public record SignUpResponse(
 ) {
     public static SignUpResponse from(User user) {
         return new SignUpResponse(
-                user.getId(),
+                user.getId().longValue(),
                 user.getNickname(),
                 user.getRole(),
                 user.getJobCategories().stream()
