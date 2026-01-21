@@ -11,20 +11,40 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.personal.interview.domain.base.DomainException;
+import com.personal.interview.domain.base.VoException;
+
 /**
  * 전역 예외 처리 핸들러
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     /**
-     * 이메일 중복 예외 처리
+     * 도메인 예외 처리
      */
-    @ExceptionHandler(DuplicateEmailException.class)
-    public ResponseEntity<Map<String, String>> handleDuplicateEmailException(DuplicateEmailException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", "DUPLICATE_EMAIL");
-        error.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorResponse> handleDomainException(DomainException ex) {
+        ErrorResponse response = ErrorResponse.builder()
+            .status(ex.getStatus().value())
+            .code(ex.getCode())
+            .message(ex.getMessage())
+            .build();
+
+        return new ResponseEntity<>(response, ex.getStatus());
+    }
+
+    /**
+     * VO 예외 처리
+     */
+    @ExceptionHandler(VoException.class)
+    public ResponseEntity<ErrorResponse> handleVoException(VoException ex) {
+        ErrorResponse response = ErrorResponse.builder()
+            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+            .code(ex.getCode())
+            .message(ex.getMessage())
+            .build();
+
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     /**
