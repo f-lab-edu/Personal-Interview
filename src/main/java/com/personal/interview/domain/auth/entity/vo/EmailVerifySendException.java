@@ -1,4 +1,4 @@
-package com.personal.interview.domain.auth.entity;
+package com.personal.interview.domain.auth.entity.vo;
 
 import com.personal.interview.domain.base.VoException;
 

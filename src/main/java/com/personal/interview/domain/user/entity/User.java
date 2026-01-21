@@ -79,7 +79,7 @@ public class User extends BaseTimeEntity {
 
     public void modifyRoleUser() {
         if (this.role.equals(UserRole.ROLE_USER)) {
-            throw new IllegalStateException("이미 ROLE_USER 권한을 가지고 있습니다.");
+            throw new AlreadyRoleUserException();
         }
 
         this.role = UserRole.ROLE_USER;

@@ -23,9 +23,9 @@ import com.personal.interview.global.config.SecurityConfig;
 
 import tools.jackson.databind.ObjectMapper;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
-class AuthControllerTest {
+class UserControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,7 +45,7 @@ class AuthControllerTest {
         given(userService.signUp(any(SignUpRequest.class))).willReturn(response);
 
         // When & Then
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/api/user/signup")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -66,7 +66,7 @@ class AuthControllerTest {
                 """;
 
         // When & Then
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/api/user/signup")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
