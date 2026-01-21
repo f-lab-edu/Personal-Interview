@@ -15,6 +15,7 @@ import com.personal.interview.domain.user.entity.vo.Email;
 import com.personal.interview.domain.user.entity.JobCategory;
 import com.personal.interview.domain.user.entity.dto.SignUpRequest;
 import com.personal.interview.domain.user.entity.User;
+import com.personal.interview.domain.user.entity.vo.JobCategoryName;
 import com.personal.interview.domain.user.entity.vo.UserRole;
 
 class UserTest {
@@ -30,11 +31,7 @@ class UserTest {
 
     @Test
     void signUp() {
-        var request = new SignUpRequest(
-            "aorl2313@naver.com",
-                "password123",
-                "테스터",
-                List.of("백엔드", "DevOps"));
+        var request = UserFixture.createDefaultSignUpRequest();
 
         User user = User.signUp(request, passwordEncoder);
 
@@ -44,7 +41,7 @@ class UserTest {
         assertThat(user.getRole()).isEqualTo(UserRole.ROLE_DRAFT);
         assertThat(user.getJobCategories()).hasSize(2)
                 .extracting(JobCategory::getName)
-                .containsExactlyInAnyOrder(request.jobCategoryNames().toArray(new String[0]));
+                .containsExactlyInAnyOrder(request.jobCategoryNames().toArray(new JobCategoryName[0]));
     }
 
     @Test

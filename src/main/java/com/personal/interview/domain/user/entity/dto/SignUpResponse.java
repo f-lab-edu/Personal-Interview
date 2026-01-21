@@ -6,13 +6,14 @@ import java.util.stream.Collectors;
 
 import com.personal.interview.domain.user.entity.JobCategory;
 import com.personal.interview.domain.user.entity.User;
+import com.personal.interview.domain.user.entity.vo.JobCategoryName;
 import com.personal.interview.domain.user.entity.vo.UserRole;
 
 public record SignUpResponse(
     Long userId,
     String nickname,
     UserRole role,
-    List<String> jobCategoryNames,
+    List<JobCategoryName> jobCategoryNames,
     LocalDateTime createdAt
 ) {
     public static SignUpResponse from(User user) {

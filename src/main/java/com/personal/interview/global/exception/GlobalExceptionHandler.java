@@ -1,21 +1,21 @@
 package com.personal.interview.global.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 전역 예외 처리 핸들러
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     /**
      * 이메일 중복 예외 처리
      */
@@ -42,6 +42,28 @@ public class GlobalExceptionHandler {
         errors.put("fields", fieldErrors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        String message = "잘못된 JSON 형식입니다.";
+
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            if (cause instanceof IllegalArgumentException) {
+                message = cause.getMessage();
+                break;
+            }
+            cause = cause.getCause();
+        }
+
+        ErrorResponse response = ErrorResponse.builder()
+            .status(HttpStatus.BAD_REQUEST.value())
+            .code("INVALID_INPUT_VALUE")
+            .message(message)
+            .build();
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     /**

@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.personal.interview.domain.base.BaseTimeEntity;
 import com.personal.interview.domain.user.entity.dto.SignUpRequest;
 import com.personal.interview.domain.user.entity.vo.Email;
+import com.personal.interview.domain.user.entity.vo.JobCategoryName;
 import com.personal.interview.domain.user.entity.vo.UserRole;
 
 import jakarta.persistence.CascadeType;
@@ -64,7 +65,7 @@ public class User extends BaseTimeEntity {
 
         user.role = UserRole.ROLE_DRAFT;
 
-        for (String categoryName : request.jobCategoryNames()) {
+        for (JobCategoryName categoryName : request.jobCategoryNames()) {
             JobCategory jobCategory = JobCategory.create(categoryName, user);
             user.jobCategories.add(jobCategory);
         }

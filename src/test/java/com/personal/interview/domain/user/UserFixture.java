@@ -2,10 +2,14 @@ package com.personal.interview.domain.user;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.personal.interview.domain.user.entity.dto.SignUpRequest;
+import com.personal.interview.domain.user.entity.dto.SignUpResponse;
 import com.personal.interview.domain.user.entity.User;
+import com.personal.interview.domain.user.entity.vo.JobCategoryName;
+import com.personal.interview.domain.user.entity.vo.UserRole;
 
 public class UserFixture {
 
@@ -20,10 +24,10 @@ public class UserFixture {
     public static final String NEW_EMAIL = "new@example.com";
 
     // Job Category 관련
-    public static final String JOB_BACKEND = "백엔드";
-    public static final String JOB_DEVOPS = "DevOps";
-    public static final List<String> JOB_CATEGORIES_BACKEND_DEVOPS = List.of(JOB_BACKEND, JOB_DEVOPS);
-    public static final List<String> JOB_CATEGORIES_BACKEND = List.of(JOB_BACKEND);
+    public static final JobCategoryName JOB_BACKEND = JobCategoryName.BACKEND;
+    public static final JobCategoryName JOB_DEVOPS = JobCategoryName.DEVOPS;
+    public static final List<JobCategoryName> JOB_CATEGORIES_BACKEND_DEVOPS = List.of(JOB_BACKEND, JOB_DEVOPS);
+    public static final List<JobCategoryName> JOB_CATEGORIES_BACKEND = List.of(JOB_BACKEND);
 
     // 예상 크기
     public static final int EXPECTED_JOB_COUNT_TWO = 2;
@@ -75,12 +79,21 @@ public class UserFixture {
         user.modifyRoleUser();
         return user;
     }
-    
+
     public static SignUpRequest createSignUpRequest() {
         return new SignUpRequest(
                 OLD_EMAIL,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
-            JOB_CATEGORIES_BACKEND_DEVOPS);
+                JOB_CATEGORIES_BACKEND_DEVOPS);
+    }
+
+    public static SignUpResponse createSignUpResponse(SignUpRequest request) {
+        return new SignUpResponse(
+                1L,
+                request.nickname(),
+                UserRole.ROLE_DRAFT,
+                request.jobCategoryNames(),
+                LocalDateTime.now());
     }
 }
