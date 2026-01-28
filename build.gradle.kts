@@ -1,6 +1,6 @@
 plugins {
 	java
-	id("org.springframework.boot") version "4.0.0"
+	id("org.springframework.boot") version "4.0.1"
 	id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -10,7 +10,7 @@ description = "Demo project for Spring Boot"
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(25)
+		languageVersion.set(JavaLanguageVersion.of(25))
 	}
 }
 
@@ -19,18 +19,43 @@ repositories {
 }
 
 dependencies {
+	// DB
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-security")
-	implementation("org.springframework.boot:spring-boot-starter-webmvc")
-	implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.0")
 	runtimeOnly("com.mysql:mysql-connector-j")
+	implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+	testRuntimeOnly("com.h2database:h2")
+
+	// Web
+	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-	testImplementation("org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.0")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+	// Security
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+
+	// DOCKER
+	implementation("org.springframework.boot:spring-boot-docker-compose")
+
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+
+	// 테스트 실패 시 더 자세한 로그를 보기 위한 설정
+	testLogging {
+		events("passed", "skipped", "failed")
+		showExceptions = true
+		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+	}
 }
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+	workingDir = file(".")
+}
+

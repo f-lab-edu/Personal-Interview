@@ -1,0 +1,55 @@
+# TODO : 환경에 맞게 수정 필요
+
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://dev-mysql-server:3306/interview_db?useSSL=true&serverTimezone=Asia/Seoul}
+    username: ${DB_USERNAME:interview_user}
+    password: ${DB_PASSWORD:change_this_password_in_production}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: HikariCP-Dev
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+        # Batch size 설정
+        default_batch_fetch_size: 100
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+
+  docker:
+    compose:
+      enabled: false
+
+# MyBatis Configuration
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.personal.interview
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.personal.interview: INFO
+    org.hibernate.SQL: WARN
+    org.mybatis: INFO
