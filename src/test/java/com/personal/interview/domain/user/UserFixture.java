@@ -5,8 +5,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.personal.interview.domain.user.entity.dto.SignUpRequest;
-import com.personal.interview.domain.user.entity.dto.SignUpResponse;
+import com.personal.interview.domain.user.controller.dto.SignUpRequest;
+import com.personal.interview.domain.user.controller.dto.SignUpResponse;
 import com.personal.interview.domain.user.entity.User;
 import com.personal.interview.domain.user.entity.vo.JobCategoryName;
 import com.personal.interview.domain.user.entity.vo.UserRole;
@@ -57,19 +57,19 @@ public class UserFixture {
     }
 
     public static User createDefaultUser(PasswordEncoder passwordEncoder) {
-        User user = User.signUp(createDefaultSignUpRequest(), passwordEncoder);
+        User user = User.signUp(createDefaultSignUpRequest(), passwordEncoder.encode(DEFAULT_RAW_PASSWORD));
         user.modifyEmail(DEFAULT_EMAIL);
         return user;
     }
 
     public static User createUserWithSingleJobCategory(PasswordEncoder passwordEncoder) {
-        User user = User.signUp(createSignUpRequestWithSingleJobCategory(), passwordEncoder);
+        User user = User.signUp(createSignUpRequestWithSingleJobCategory(), passwordEncoder.encode(DEFAULT_RAW_PASSWORD));
         user.modifyEmail(DEFAULT_EMAIL);
         return user;
     }
 
     public static User createUserWithOldEmail(PasswordEncoder passwordEncoder) {
-        User user = User.signUp(createSignUpRequestWithOldEmail(), passwordEncoder);
+        User user = User.signUp(createSignUpRequestWithOldEmail(), passwordEncoder.encode(DEFAULT_RAW_PASSWORD));
         user.modifyEmail(OLD_EMAIL);
         return user;
     }
@@ -83,6 +83,14 @@ public class UserFixture {
     public static SignUpRequest createSignUpRequest() {
         return new SignUpRequest(
                 OLD_EMAIL,
+                DEFAULT_RAW_PASSWORD,
+                DEFAULT_NICKNAME,
+                JOB_CATEGORIES_BACKEND_DEVOPS);
+    }
+
+    public static SignUpRequest createSignUpRequest(String email) {
+        return new SignUpRequest(
+                email,
                 DEFAULT_RAW_PASSWORD,
                 DEFAULT_NICKNAME,
                 JOB_CATEGORIES_BACKEND_DEVOPS);

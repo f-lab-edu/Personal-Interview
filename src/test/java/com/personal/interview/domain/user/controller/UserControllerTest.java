@@ -16,8 +16,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.personal.interview.domain.user.UserFixture;
-import com.personal.interview.domain.user.entity.dto.SignUpRequest;
-import com.personal.interview.domain.user.entity.dto.SignUpResponse;
+import com.personal.interview.domain.user.controller.dto.SignUpRequest;
+import com.personal.interview.domain.user.controller.dto.SignUpResponse;
 import com.personal.interview.domain.user.service.UserService;
 import com.personal.interview.global.config.SecurityConfig;
 

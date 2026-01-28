@@ -15,9 +15,11 @@ import jakarta.persistence.LockModeType;
 @org.springframework.stereotype.Repository
 public interface EmailVerifyRepository extends Repository<EmailVerify, EmailVerifyId> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	Optional<EmailVerify> findTopByUserIdOrderByIdDesc(UserId userId);
+	Optional<EmailVerify> findTopWithLockByUserIdOrderByIdDesc(UserId userId);
 
 	EmailVerify save(EmailVerify emailVerify);
 
 	Optional<EmailVerify> findByUserIdAndVerificationToken(UserId userId, UUID token);
+
+	Optional<EmailVerify> findTopByVerificationTokenOrderByIdDesc(UUID token);
 }

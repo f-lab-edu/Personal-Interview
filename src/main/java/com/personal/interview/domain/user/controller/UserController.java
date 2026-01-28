@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.personal.interview.domain.user.entity.dto.SignUpRequest;
-import com.personal.interview.domain.user.entity.dto.SignUpResponse;
+import com.personal.interview.domain.user.controller.dto.SignUpRequest;
+import com.personal.interview.domain.user.controller.dto.SignUpResponse;
 import com.personal.interview.domain.user.service.UserService;
 
 import jakarta.validation.Valid;

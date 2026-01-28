@@ -1,4 +1,4 @@
-package com.personal.interview.domain.user.entity.dto;
+package com.personal.interview.domain.user.controller.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;

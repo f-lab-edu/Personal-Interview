@@ -3,6 +3,7 @@ package com.personal.interview.domain.auth.controller;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,9 +31,16 @@ public class EmailVerifyController {
 			.ok(EmailVerifyResponse.from(verifyService.sendVerifyEmail(userId)));
 	}
 
-	@PostMapping("/verify")
-	public ResponseEntity<EmailVerifyResponse> verifyEmail(@RequestParam Long userId,@RequestParam String token) {
+	@GetMapping("/verify")
+	public ResponseEntity<EmailVerifyResponse> verifyEmail(@RequestParam String token) {
+		UUID uuidToken;
+		try {
+			uuidToken = UUID.fromString(token);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("유효하지 않은 토큰 형식입니다.");
+		}
+
 		return ResponseEntity
-			.ok(EmailVerifyResponse.from(verifyService.verifyEmail(new UserId(userId), UUID.fromString(token))));
+			.ok(EmailVerifyResponse.from(verifyService.verifyEmail(uuidToken)));
 	}
 }

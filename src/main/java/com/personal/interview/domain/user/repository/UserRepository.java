@@ -11,8 +11,12 @@ import com.personal.interview.domain.user.entity.vo.Email;
 @Repository
 public interface UserRepository extends org.springframework.data.repository.Repository<User, UserId> {
     User save(User user);
+    
+    void delete(User user);
 
     Optional<User> findById(UserId id);
+    
+    Optional<User> findByEmail(Email email);
 
     boolean existsByEmail(Email email);
 }
