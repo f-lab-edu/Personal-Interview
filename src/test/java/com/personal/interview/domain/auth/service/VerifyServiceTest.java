@@ -19,9 +19,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.personal.interview.domain.auth.entity.EmailVerify;
-import com.personal.interview.domain.auth.entity.EmailVerifySendEvent;
 import com.personal.interview.domain.auth.repository.EmailVerifyRepository;
 import com.personal.interview.domain.user.UserFixture;
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.ErrorCode;
 import com.personal.interview.domain.user.entity.User;
 import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.domain.user.entity.vo.UserRole;
@@ -76,7 +77,7 @@ class VerifyServiceTest {
 		em.clear();
 
 		// then
-		Optional<EmailVerify> savedVerify = emailVerifyRepository.findTopByUserIdOrderByIdDesc(userId);
+		Optional<EmailVerify> savedVerify = emailVerifyRepository.findTopWithLockByUserIdOrderByIdDesc(userId);
 		assertTrue(savedVerify.isPresent());
 		assertThat(savedVerify.get().getVerificationToken()).isEqualTo(result.getVerificationToken());
 		assertThat(savedVerify.get().getSendCount().value()).isEqualTo(1);
@@ -98,7 +99,7 @@ class VerifyServiceTest {
 		em.clear();
 
 		// then
-		EmailVerify savedVerify = emailVerifyRepository.findTopByUserIdOrderByIdDesc(userId).get();
+		EmailVerify savedVerify = emailVerifyRepository.findTopWithLockByUserIdOrderByIdDesc(userId).get();
 		assertThat(savedVerify.getSendCount().value()).isEqualTo(2);
 	}
 
@@ -129,7 +130,7 @@ class VerifyServiceTest {
 		em.clear();
 
 		// when
-		verifyService.verifyEmail(user.getId(), token);
+		verifyService.verifyEmail(token);
 		em.flush();
 		em.clear();
 
@@ -154,8 +155,9 @@ class VerifyServiceTest {
 		em.clear();
 
 		// when & then
-		assertThatThrownBy(() -> verifyService.verifyEmail(user.getId(), invalidToken))
-			.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> verifyService.verifyEmail(invalidToken))
+			.isInstanceOf(DomainException.class)
+			.satisfies(ex -> assertThat(((DomainException) ex).getErrorCode()).isEqualTo(ErrorCode.INVALID_TOKEN));
 	}
 
 	@Test
@@ -165,7 +167,7 @@ class VerifyServiceTest {
 		EmailVerify emailVerify = emailVerifyRepository.save(EmailVerify.create(new UserId(999L)));
 
 		// when & then
-		assertThatThrownBy(() -> verifyService.verifyEmail(new UserId(999L), emailVerify.getVerificationToken()))
+		assertThatThrownBy(() -> verifyService.verifyEmail(emailVerify.getVerificationToken()))
 			.isInstanceOf(IllegalArgumentException.class);
 	}
 }

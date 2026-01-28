@@ -11,6 +11,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.personal.interview.domain.auth.entity.vo.SendCount;
 import com.personal.interview.domain.user.entity.UserId;
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.ErrorCode;
 
 class EmailVerifyTest {
 
@@ -64,7 +66,8 @@ class EmailVerifyTest {
 
 		// when & then
 		assertThatThrownBy(original::reCreate)
-			.isInstanceOf(AlreadyVerifiedException.class);
+			.isInstanceOf(DomainException.class)
+			.satisfies(ex -> assertThat(((DomainException) ex).getErrorCode()).isEqualTo(ErrorCode.ALREADY_VERIFIED));
 	}
 
 	@Test
@@ -76,7 +79,8 @@ class EmailVerifyTest {
 
 		// when & then
 		assertThatThrownBy(original::reCreate)
-			.isInstanceOf(ExceedMaxSendCountException.class);
+			.isInstanceOf(DomainException.class)
+			.satisfies(ex -> assertThat(((DomainException) ex).getErrorCode()).isEqualTo(ErrorCode.EXCEED_MAX_SEND_COUNT));
 	}
 
 	@Test
@@ -109,7 +113,7 @@ class EmailVerifyTest {
 	}
 
 	@Test
-	@DisplayName("이미 인증된 상태에서 verify 호출 시 AlreadyVerifiedException이 발생한다")
+	@DisplayName("이미 인증된 상태에서 verify 호출 시 DomainException(ALREADY_VERIFIED)이 발생한다")
 	void verify_Fail_AlreadyVerified() {
 		// given
 		EmailVerify emailVerify = EmailVerify.create(new UserId(1L));
@@ -117,11 +121,12 @@ class EmailVerifyTest {
 
 		// when & then
 		assertThatThrownBy(emailVerify::verify)
-			.isInstanceOf(AlreadyVerifiedException.class);
+			.isInstanceOf(DomainException.class)
+			.satisfies(ex -> assertThat(((DomainException) ex).getErrorCode()).isEqualTo(ErrorCode.ALREADY_VERIFIED));
 	}
 
 	@Test
-	@DisplayName("인증 만료 시간이 지난 후 verify 호출 시 VerificationExpiredException이 발생한다")
+	@DisplayName("인증 만료 시간이 지난 후 verify 호출 시 DomainException(VERIFICATION_EXPIRED)이 발생한다")
 	void verify_Fail_Expired() {
 		// given
 		EmailVerify emailVerify = EmailVerify.create(new UserId(1L));
@@ -130,7 +135,8 @@ class EmailVerifyTest {
 
 		// when & then
 		assertThatThrownBy(emailVerify::verify)
-			.isInstanceOf(VerificationExpiredException.class);
+			.isInstanceOf(DomainException.class)
+			.satisfies(ex -> assertThat(((DomainException) ex).getErrorCode()).isEqualTo(ErrorCode.VERIFICATION_EXPIRED));
 	}
 
 }

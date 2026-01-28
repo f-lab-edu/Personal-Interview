@@ -12,6 +12,8 @@ import org.hibernate.annotations.JavaType;
 
 import com.personal.interview.domain.auth.entity.vo.SendCount;
 import com.personal.interview.domain.user.entity.UserId;
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.ErrorCode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -81,10 +83,10 @@ public class EmailVerify{
 			return create(this.userId);
 		}
 		if (this.isVerify) {
-			throw new AlreadyVerifiedException();
+			throw DomainException.create(ErrorCode.ALREADY_VERIFIED);
 		}
 		if(this.sendCount.value() >= MAX_SEND_COUNT) {
-			throw new ExceedMaxSendCountException();
+			throw DomainException.create(ErrorCode.EXCEED_MAX_SEND_COUNT);
 		}
 
 		emailVerify.verificationToken = this.verificationToken;
@@ -100,10 +102,10 @@ public class EmailVerify{
 
 	public void verify() {
 		if (this.isVerify) {
-			throw new AlreadyVerifiedException();
+			throw DomainException.create(ErrorCode.ALREADY_VERIFIED);
 		}
 		if (LocalDateTime.now().isAfter(this.expiredAt)) {
-			throw new VerificationExpiredException();
+			throw DomainException.create(ErrorCode.VERIFICATION_EXPIRED);
 		}
 
 		this.isVerify = true;

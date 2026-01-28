@@ -11,12 +11,14 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.personal.interview.domain.base.DomainException;
 import com.personal.interview.domain.base.VoException;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 전역 예외 처리 핸들러
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     /**
@@ -25,12 +27,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ErrorResponse> handleDomainException(DomainException ex) {
         ErrorResponse response = ErrorResponse.builder()
-            .status(ex.getStatus().value())
-            .code(ex.getCode())
+            .status(ex.getErrorCode().getStatus().value())
+            .code(ex.getErrorCode().getCode())
             .message(ex.getMessage())
             .build();
 
-        return new ResponseEntity<>(response, ex.getStatus());
+        return new ResponseEntity<>(response, ex.getErrorCode().getStatus());
     }
 
     /**
@@ -86,14 +88,25 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+        ErrorResponse response = ErrorResponse.builder()
+            .status(HttpStatus.BAD_REQUEST.value())
+            .code("INVALID_INPUT")
+            .message(ex.getMessage())
+            .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     /**
-     * 기타 예외 처리
+     * 서버 예외 처리
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
+        log.error("Unhandled exception occurred: ", ex);
         Map<String, String> error = new HashMap<>();
         error.put("error", "INTERNAL_SERVER_ERROR");
-        error.put("message", ex.getMessage());
+        error.put("message", "시스템에 문제가 발생했습니다.");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }

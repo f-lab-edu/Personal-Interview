@@ -13,6 +13,9 @@ import com.personal.interview.domain.user.entity.User;
 import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.domain.user.repository.UserRepository;
 
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.ErrorCode;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -27,7 +30,7 @@ public class VerifyService {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-		EmailVerify result = emailVerifyRepository.findTopByUserIdOrderByIdDesc(userId)
+		EmailVerify result = emailVerifyRepository.findTopWithLockByUserIdOrderByIdDesc(userId)
 			.map(EmailVerify::reCreate)
 			.orElseGet(() -> EmailVerify.create(userId));
 
@@ -37,11 +40,11 @@ public class VerifyService {
 	}
 
 	@Transactional
-	public EmailVerify verifyEmail(UserId userId, UUID token) {
-		EmailVerify emailVerify = emailVerifyRepository.findByUserIdAndVerificationToken(userId, token)
-			.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 인증 토큰입니다."));
+	public EmailVerify verifyEmail(UUID token) {
+		EmailVerify emailVerify = emailVerifyRepository.findTopByVerificationTokenOrderByIdDesc(token)
+			.orElseThrow(() -> DomainException.create(ErrorCode.INVALID_TOKEN));
 
-		User user = userRepository.findById(userId)
+		User user = userRepository.findById(emailVerify.getUserId())
 			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
 		emailVerify.verify();

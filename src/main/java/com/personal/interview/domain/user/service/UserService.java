@@ -1,12 +1,15 @@
 package com.personal.interview.domain.user.service;
 
-import com.personal.interview.domain.user.entity.dto.SignUpResponse;
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.ErrorCode;
+import com.personal.interview.domain.user.controller.dto.SignUpResponse;
 import com.personal.interview.domain.user.entity.User;
-import com.personal.interview.domain.user.entity.dto.SignUpRequest;
+import com.personal.interview.domain.user.controller.dto.SignUpRequest;
 
 import com.personal.interview.domain.user.entity.vo.Email;
 import com.personal.interview.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,13 +24,18 @@ public class UserService {
     @Transactional
     public SignUpResponse signUp(SignUpRequest request) {
         if(userRepository.existsByEmail(new Email(request.email()))) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw DomainException.create(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        User user = User.signUp(request, passwordEncoder);
+        final String encryptedPassword = passwordEncoder.encode(request.password());
 
-        User savedUser = userRepository.save(user);
+        User user = User.signUp(request, encryptedPassword);
 
-        return SignUpResponse.from(savedUser);
+        try {
+            User savedUser = userRepository.save(user);
+            return SignUpResponse.from(savedUser);
+        } catch (DataIntegrityViolationException e) {
+            throw DomainException.create(ErrorCode.DUPLICATE_EMAIL);
+        }
     }
 }

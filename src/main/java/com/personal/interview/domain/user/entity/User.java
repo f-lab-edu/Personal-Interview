@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.JavaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 import com.personal.interview.domain.base.BaseTimeEntity;
-import com.personal.interview.domain.user.entity.dto.SignUpRequest;
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.ErrorCode;
+import com.personal.interview.domain.user.controller.dto.SignUpRequest;
 import com.personal.interview.domain.user.entity.vo.Email;
 import com.personal.interview.domain.user.entity.vo.JobCategoryName;
 import com.personal.interview.domain.user.entity.vo.UserRole;
@@ -56,11 +56,11 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobCategory> jobCategories = new ArrayList<>();
 
-    public static User signUp(SignUpRequest request, PasswordEncoder passwordEncoder) {
+    public static User signUp(SignUpRequest request, String encryptedPassword) {
         var user = new User();
 
         user.email = new Email(requireNonNull(request.email()));
-        user.password = passwordEncoder.encode(requireNonNull(request.password()));
+        user.password = requireNonNull(encryptedPassword);
         user.nickname = requireNonNull(request.nickname());
 
         user.role = UserRole.ROLE_DRAFT;
@@ -79,7 +79,7 @@ public class User extends BaseTimeEntity {
 
     public void modifyRoleUser() {
         if (this.role.equals(UserRole.ROLE_USER)) {
-            throw new AlreadyRoleUserException();
+            throw DomainException.create(ErrorCode.ALREADY_ROLE_USER);
         }
 
         this.role = UserRole.ROLE_USER;

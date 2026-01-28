@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.personal.interview.domain.user.entity.vo.Email;
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.ErrorCode;
 import com.personal.interview.domain.user.entity.JobCategory;
-import com.personal.interview.domain.user.entity.dto.SignUpRequest;
+import com.personal.interview.domain.user.controller.dto.SignUpRequest;
 import com.personal.interview.domain.user.entity.User;
 import com.personal.interview.domain.user.entity.vo.JobCategoryName;
 import com.personal.interview.domain.user.entity.vo.UserRole;
@@ -33,7 +35,7 @@ class UserTest {
     void signUp() {
         var request = UserFixture.createDefaultSignUpRequest();
 
-        User user = User.signUp(request, passwordEncoder);
+        User user = User.signUp(request, passwordEncoder.encode(request.password()));
 
         assertThat(user.getEmail()).isEqualTo(new Email(request.email()));
         assertThat(user.getPassword()).isEqualTo(passwordEncoder.encode(request.password()));
@@ -68,7 +70,8 @@ class UserTest {
         User user = createUserWithRoleUser(passwordEncoder);
 
         assertThatThrownBy(() -> user.modifyRoleUser())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("이미 ROLE_USER 권한을 가지고 있습니다");
+                .isInstanceOf(DomainException.class)
+                .satisfies(ex -> assertThat(((DomainException) ex).getErrorCode()).isEqualTo(ErrorCode.ALREADY_ROLE_USER))
+                .hasMessageContaining("이미 해당 권한을 가진 사용자입니다.");
     }
 }
