@@ -18,9 +18,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.personal.interview.domain.auth.AuthPropertiesFixture;
 import com.personal.interview.domain.auth.entity.EmailVerify;
 import com.personal.interview.domain.auth.repository.EmailVerifyRepository;
 import com.personal.interview.domain.user.UserFixture;
+import com.personal.interview.global.config.properties.AuthProperties;
 import com.personal.interview.global.exception.DomainException;
 import com.personal.interview.global.exception.ErrorCode;
 import com.personal.interview.domain.user.entity.User;
@@ -54,12 +56,15 @@ class VerifyServiceTest {
 	EmailVerifySender emailVerifySender;
 
 	private PasswordEncoder passwordEncoder;
+	private AuthProperties authProperties;
 
 	@BeforeEach
 	void setUp() {
 		passwordEncoder = mock(PasswordEncoder.class);
 		when(passwordEncoder.encode(anyString()))
 			.thenAnswer(invocation -> "$2a$10$encoded_" + invocation.getArgument(0));
+		
+		authProperties = AuthPropertiesFixture.createDefault();
 	}
 
 	@Test
@@ -80,7 +85,7 @@ class VerifyServiceTest {
 		Optional<EmailVerify> savedVerify = emailVerifyRepository.findTopWithLockByUserIdOrderByIdDesc(userId);
 		assertTrue(savedVerify.isPresent());
 		assertThat(savedVerify.get().getVerificationToken()).isEqualTo(result.getVerificationToken());
-		assertThat(savedVerify.get().getSendCount().value()).isEqualTo(1);
+		assertThat(savedVerify.get().getSendCount()).isEqualTo(1);
 	}
 
 	@Test
@@ -100,7 +105,7 @@ class VerifyServiceTest {
 
 		// then
 		EmailVerify savedVerify = emailVerifyRepository.findTopWithLockByUserIdOrderByIdDesc(userId).get();
-		assertThat(savedVerify.getSendCount().value()).isEqualTo(2);
+		assertThat(savedVerify.getSendCount()).isEqualTo(2);
 	}
 
 	@Test
@@ -121,7 +126,7 @@ class VerifyServiceTest {
 	void verifyEmail_Success() {
 		// given
 		User user = userRepository.save(UserFixture.createDefaultUser(passwordEncoder));
-		EmailVerify emailVerify = emailVerifyRepository.save(EmailVerify.create(user.getId()));
+		EmailVerify emailVerify = emailVerifyRepository.save(EmailVerify.create(user.getId(), authProperties));
 		UUID token = emailVerify.getVerificationToken();
 		assertThat(user.getRole()).isEqualTo(UserRole.ROLE_DRAFT);
 
@@ -148,7 +153,7 @@ class VerifyServiceTest {
 	void verifyEmail_InvalidTokenFail() {
 		// given
 		User user = userRepository.save(UserFixture.createDefaultUser(passwordEncoder));
-		emailVerifyRepository.save(EmailVerify.create(user.getId()));
+		emailVerifyRepository.save(EmailVerify.create(user.getId(), authProperties));
 		UUID invalidToken = UUID.randomUUID();
 
 		em.flush();
@@ -164,7 +169,7 @@ class VerifyServiceTest {
 	@DisplayName("사용자 ID가 존재하지 않으면 예외가 발생한다")
 	void verifyEmail_UserNotFoundFail() {
 		// given
-		EmailVerify emailVerify = emailVerifyRepository.save(EmailVerify.create(new UserId(999L)));
+		EmailVerify emailVerify = emailVerifyRepository.save(EmailVerify.create(new UserId(999L), authProperties));
 
 		// when & then
 		assertThatThrownBy(() -> verifyService.verifyEmail(emailVerify.getVerificationToken()))

@@ -1,18 +1,15 @@
 package com.personal.interview.domain.auth.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +19,12 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.personal.interview.domain.auth.controller.dto.EmailVerifyResponse;
+import com.personal.interview.domain.auth.AuthPropertiesFixture;
 import com.personal.interview.domain.auth.entity.EmailVerify;
 import com.personal.interview.domain.auth.service.VerifyService;
 import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.global.config.SecurityConfig;
+import com.personal.interview.global.config.properties.AuthProperties;
 
 @WebMvcTest(EmailVerifyController.class)
 @Import(SecurityConfig.class)
@@ -38,12 +36,19 @@ class EmailVerifyControllerTest {
     @MockitoBean
     private VerifyService verifyService;
 
+    private AuthProperties authProperties;
+
+    @BeforeEach
+    void setUp() {
+        authProperties = AuthPropertiesFixture.createDefault();
+    }
+
     @Test
     @DisplayName("인증 메일 발송 성공")
     @WithMockUser(username = "1")
     void sendVerificationEmail_Success() throws Exception {
         // given
-        EmailVerify mockVerify = EmailVerify.create(new UserId(1L));
+        EmailVerify mockVerify = EmailVerify.create(new UserId(1L), authProperties);
 
         given(verifyService.sendVerifyEmail(any(UserId.class))).willReturn(mockVerify);
 
@@ -59,7 +64,7 @@ class EmailVerifyControllerTest {
     void verifyEmail_Success() throws Exception {
         // given
         UUID token = UUID.randomUUID();
-        EmailVerify mockVerify = EmailVerify.create(new UserId(1L));
+        EmailVerify mockVerify = EmailVerify.create(new UserId(1L), authProperties);
         mockVerify.verify(); // 인증 완료 상태로 변경
         
         given(verifyService.verifyEmail(token)).willReturn(mockVerify);

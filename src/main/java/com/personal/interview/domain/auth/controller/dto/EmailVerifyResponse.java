@@ -13,7 +13,7 @@ public record EmailVerifyResponse(
 	public static EmailVerifyResponse from(EmailVerify emailVerify) {
 		return new EmailVerifyResponse(
 			emailVerify.getExpiredAt(),
-			emailVerify.getSendCount().value(),
+			emailVerify.getSendCount(),
 			emailVerify.isVerify(),
 			emailVerify.getCountResetAt()
 		);
