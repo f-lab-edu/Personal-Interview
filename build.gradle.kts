@@ -42,6 +42,10 @@ dependencies {
 	// DOCKER
 	implementation("org.springframework.boot:spring-boot-docker-compose")
 
+	// Email
+	implementation("org.springframework.boot:spring-boot-starter-mail")
+	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+
 }
 
 tasks.withType<Test> {
