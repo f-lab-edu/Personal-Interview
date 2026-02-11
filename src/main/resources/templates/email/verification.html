@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이메일 인증</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Personal Interview</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;">이메일 인증</h2>
+                            <p style="margin: 0 0 20px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                                안녕하세요!<br>
+                                Personal Interview에 가입해 주셔서 감사합니다.
+                            </p>
+                            <p style="margin: 0 0 30px 0; color: #666666; font-size: 16px; line-height: 1.6;">
+                                아래 버튼을 클릭하여 이메일 인증을 완료해주세요.
+                            </p>
+                            
+                            <!-- Button -->
+                            <table role="presentation" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="border-radius: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <a th:href="${verificationLink}" 
+                                           style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px;">
+                                            이메일 인증하기
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 30px 0 0 0; color: #999999; font-size: 14px; line-height: 1.6;">
+                                이 링크는 <strong th:text="${expirationMinutes}">10</strong>분 후 만료됩니다.
+                            </p>
+                            
+                            <!-- Alternative link -->
+                            <div style="margin: 30px 0 0 0; padding: 20px; background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #667eea;">
+                                <p style="margin: 0 0 10px 0; color: #666666; font-size: 14px; font-weight: 600;">
+                                    버튼이 작동하지 않나요?
+                                </p>
+                                <p style="margin: 0; color: #999999; font-size: 13px; word-break: break-all;">
+                                    아래 링크를 복사하여 브라우저 주소창에 붙여넣으세요:<br>
+                                    <span th:text="${verificationLink}" style="color: #667eea;">링크</span>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px; text-align: center;">
+                            <p style="margin: 0; color: #999999; font-size: 13px; line-height: 1.6;">
+                                본 이메일은 발신 전용입니다. 문의사항이 있으시면 고객센터를 이용해주세요.
+                            </p>
+                            <p style="margin: 10px 0 0 0; color: #999999; font-size: 13px;">
+                                © 2026 Personal Interview. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

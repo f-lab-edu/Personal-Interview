@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import com.personal.interview.domain.user.entity.vo.Email;
 
-// TODO: 추후 EmailVerifySender 구현체 작성 필요
 @Component
 public interface EmailVerifySender{
 	/**
