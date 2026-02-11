@@ -36,6 +36,9 @@ class EmailVerifyControllerTest {
     @MockitoBean
     private VerifyService verifyService;
 
+    @MockitoBean
+    private com.personal.interview.global.config.properties.EmailProperties emailProperties;
+
     private AuthProperties authProperties;
 
     @BeforeEach
@@ -65,7 +68,7 @@ class EmailVerifyControllerTest {
         // given
         UUID token = UUID.randomUUID();
         EmailVerify mockVerify = EmailVerify.create(new UserId(1L), authProperties);
-        mockVerify.verify(); // 인증 완료 상태로 변경
+        mockVerify.verify();
         
         given(verifyService.verifyEmail(token)).willReturn(mockVerify);
 
