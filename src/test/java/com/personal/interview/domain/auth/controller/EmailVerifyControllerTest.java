@@ -25,6 +25,10 @@ import com.personal.interview.domain.auth.service.VerifyService;
 import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.global.config.SecurityConfig;
 import com.personal.interview.global.config.properties.AuthProperties;
+import com.personal.interview.global.exception.DomainException;
+import com.personal.interview.global.exception.BaseErrorCode;
+
+import org.springframework.http.HttpStatus;
 
 @WebMvcTest(EmailVerifyController.class)
 @Import(SecurityConfig.class)
@@ -35,9 +39,6 @@ class EmailVerifyControllerTest {
 
     @MockitoBean
     private VerifyService verifyService;
-
-    @MockitoBean
-    private com.personal.interview.global.config.properties.EmailProperties emailProperties;
 
     private AuthProperties authProperties;
 
@@ -58,8 +59,8 @@ class EmailVerifyControllerTest {
         // when & then
         mockMvc.perform(post("/api/auth/email/send")
                 .with(csrf()))
-            .andDo(print())
-            .andExpect(status().isOk());
+                .andDo(print())
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -69,15 +70,15 @@ class EmailVerifyControllerTest {
         UUID token = UUID.randomUUID();
         EmailVerify mockVerify = EmailVerify.create(new UserId(1L), authProperties);
         mockVerify.verify();
-        
+
         given(verifyService.verifyEmail(token)).willReturn(mockVerify);
 
         // when & then
         mockMvc.perform(get("/api/auth/email/verify")
                 .param("token", token.toString()))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.isVerify").value(true));
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isVerify").value(true));
     }
 
     @Test
@@ -89,7 +90,75 @@ class EmailVerifyControllerTest {
         // when & then
         mockMvc.perform(get("/api/auth/email/verify")
                 .param("token", invalidToken))
-            .andDo(print())
-            .andExpect(status().isBadRequest());
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("이메일 인증 리다이렉트 - 성공 시 성공 페이지 렌더링")
+    void verifyEmailWithRedirect_Success() throws Exception {
+        // given
+        UUID token = UUID.randomUUID();
+        EmailVerify mockVerify = EmailVerify.create(new UserId(1L), authProperties);
+        mockVerify.verify();
+
+        given(verifyService.verifyEmail(token)).willReturn(mockVerify);
+
+        // when & then
+        mockMvc.perform(get("/api/auth/email/verify/redirect")
+                .param("token", token.toString()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(view().name("email/verify-success"));
+    }
+
+    @Test
+    @DisplayName("이메일 인증 리다이렉트 - 도메인 예외 시 실패 페이지 렌더링")
+    void verifyEmailWithRedirect_DomainException() throws Exception {
+        // given
+        UUID token = UUID.randomUUID();
+
+        given(verifyService.verifyEmail(token))
+                .willThrow(DomainException.create(new BaseErrorCode() {
+                    @Override
+                    public String getCode() {
+                        return "EXPIRED_TOKEN";
+                    }
+
+                    @Override
+                    public String getMessage() {
+                        return "만료된 토큰입니다.";
+                    }
+
+                    @Override
+                    public HttpStatus getStatus() {
+                        return HttpStatus.BAD_REQUEST;
+                    }
+                }));
+
+        // when & then
+        mockMvc.perform(get("/api/auth/email/verify/redirect")
+                .param("token", token.toString()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(view().name("email/verify-failure"))
+                .andExpect(model().attribute("errorCode", "EXPIRED_TOKEN"))
+                .andExpect(model().attribute("errorMessage", "만료된 토큰입니다."));
+    }
+
+    @Test
+    @DisplayName("이메일 인증 리다이렉트 - 잘못된 토큰 형식 시 실패 페이지 렌더링")
+    void verifyEmailWithRedirect_InvalidTokenFormat() throws Exception {
+        // given
+        String invalidToken = "invalid-token";
+
+        // when & then
+        mockMvc.perform(get("/api/auth/email/verify/redirect")
+                .param("token", invalidToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(view().name("email/verify-failure"))
+                .andExpect(model().attribute("errorCode", "INVALID_TOKEN_FORMAT"))
+                .andExpect(model().attribute("errorMessage", "유효하지 않은 토큰 형식입니다."));
     }
 }

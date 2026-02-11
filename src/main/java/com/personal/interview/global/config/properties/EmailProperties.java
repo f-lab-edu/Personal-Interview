@@ -8,10 +8,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties(prefix = "app.email")
 public record EmailProperties(
-    @DefaultValue("http://localhost:8080") String baseUrl,
-    @DefaultValue("noreply@personal-interview.com") String senderEmail,
-    @DefaultValue("Personal Interview") String senderName,
-    @DefaultValue("/verified/success") String successRedirectPath,
-    @DefaultValue("/verified/failure") String failureRedirectPath
-) {
+        @DefaultValue("http://localhost:8080") String baseUrl,
+        @DefaultValue("noreply@personal-interview.com") String senderEmail,
+        @DefaultValue("Personal Interview") String senderName) {
 }
