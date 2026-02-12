@@ -83,20 +83,6 @@ class EmailVerifySenderImplTest {
         verify(templateEngine, times(1)).process(eq("email/verification"), any());
     }
 
-    @Test
-    @DisplayName("이메일 발송 실패 시 예외를 로깅하고 계속 진행")
-    void sendVerificationEmail_SendFail_LogsErrorAndContinues() {
-        // given
-        doThrow(new RuntimeException("SMTP connection failed"))
-            .when(mailSender).send(any(MimeMessage.class));
-
-        // when & then
-        // 예외가 throw되지 않고 로깅만 되어야 함
-        assertThatCode(() -> emailVerifySender.sendVerificationEmail(testEmail, testToken))
-            .doesNotThrowAnyException();
-
-        verify(mailSender, times(1)).send(any(MimeMessage.class));
-    }
 
     @Test
     @DisplayName("Thymeleaf 템플릿에 올바른 변수가 전달되는지 검증")
@@ -119,5 +105,42 @@ class EmailVerifySenderImplTest {
         assertThat(verificationLink).contains("/api/auth/email/verify/redirect");
         assertThat(verificationLink).contains(testToken.toString());
         assertThat(expirationMinutes).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("이메일 발송이 실패하면 retry 동작 검증")
+    void retryTest() {
+        // 첫 2번은 예외 발생, 3번째는 정상 실행(doNothing) 설정
+        doThrow(new RuntimeException("Mail Server Down"))
+            .doThrow(new RuntimeException("Connection Timeout"))
+            .doNothing()
+            .when(mailSender).send(any(MimeMessage.class));
+
+        // When
+        emailVerifySender.sendVerificationEmail(testEmail, testToken);
+
+        // Then
+        verify(mailSender, times(3)).send(any(MimeMessage.class));
+    }
+
+
+    @Test
+    @DisplayName("retry 최대 시도 횟수 검증")
+    void retryFailTest() {
+        // 6번 모두 예외 발생 설정
+        doThrow(new RuntimeException("Mail Server Down"))
+            .doThrow(new RuntimeException("Connection Timeout"))
+            .doThrow(new RuntimeException("Connection Timeout"))
+            .doThrow(new RuntimeException("Connection Timeout"))
+            .doThrow(new RuntimeException("Connection Timeout"))
+            .doThrow(new RuntimeException("Connection Timeout"))
+            .when(mailSender).send(any(MimeMessage.class));
+
+        // When
+        assertThatCode(() -> emailVerifySender.sendVerificationEmail(testEmail, testToken))
+            .doesNotThrowAnyException();
+
+        // Then
+        verify(mailSender, times(5)).send(any(MimeMessage.class));
     }
 }

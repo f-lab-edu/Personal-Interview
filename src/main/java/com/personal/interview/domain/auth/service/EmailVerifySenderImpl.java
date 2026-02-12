@@ -1,8 +1,11 @@
 package com.personal.interview.domain.auth.service;
 
 import java.io.UnsupportedEncodingException;
+import java.time.Duration;
 import java.util.UUID;
 
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -23,23 +26,29 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class EmailVerifySenderImpl implements EmailVerifySender {
-    
     private final JavaMailSender javaMailSender;
     private final SpringTemplateEngine templateEngine;
     private final EmailProperties emailProperties;
     private final AuthProperties authProperties;
+
+    private static final RetryTemplate RETRY_TEMPLATE = new RetryTemplate(
+        RetryPolicy.builder()
+            .includes(Exception.class)
+            .maxRetries(4)
+            .delay(Duration.ofMillis(1000)).build());
 
     @Override
     public void sendVerificationEmail(Email email, UUID token) {
         try {
             MimeMessage mimeMessage = setMessage(email, token);
 
-            javaMailSender.send(mimeMessage);
-            
+            RETRY_TEMPLATE.execute(()->{
+                javaMailSender.send(mimeMessage);
+                return null;});
+
             log.info("이메일 발송 성공: email={}, token={}", email.value(), token);
-            
         } catch (Exception e) {
-            log.error("이메일 발송 실패: email={}, token={}, error={}", 
+            log.error("이메일 발송 실패: email={}, token={}, error={}",
                 email.value(), token, e.getMessage(), e);
         }
     }
