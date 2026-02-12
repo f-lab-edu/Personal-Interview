@@ -16,3 +16,7 @@ app:
     min-send-count: 0
     verification-expiration-minutes: 10
     count-reset-hours: 24
+  email:
+    base-url: ${EMAIL_BASE_URL:http://localhost:8080}
+    sender-email: ${EMAIL_SENDER:noreply@personal-interview.com}
+    sender-name: Personal Interview
