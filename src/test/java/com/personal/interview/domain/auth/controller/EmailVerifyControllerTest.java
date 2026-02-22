@@ -21,24 +21,49 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.personal.interview.domain.auth.AuthPropertiesFixture;
 import com.personal.interview.domain.auth.entity.EmailVerify;
+import com.personal.interview.domain.auth.repository.UserRefreshTokenRepository;
 import com.personal.interview.domain.auth.service.VerifyService;
 import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.global.config.SecurityConfig;
 import com.personal.interview.global.config.properties.AuthProperties;
 import com.personal.interview.global.exception.DomainException;
 import com.personal.interview.global.exception.BaseErrorCode;
+import com.personal.interview.global.security.JwtTokenProvider;
+import com.personal.interview.global.security.aop.AuthorizeAspect;
+import com.personal.interview.global.security.handler.JwtAccessDeniedHandler;
+import com.personal.interview.global.security.handler.JwtAuthenticationEntryPoint;
+import com.personal.interview.global.security.service.RefreshTokenService;
+import com.personal.interview.util.validator.SecurityValidatorUtil;
 
 import org.springframework.http.HttpStatus;
 
 @WebMvcTest(EmailVerifyController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, AuthorizeAspect.class,
+        org.springframework.boot.autoconfigure.aop.AopAutoConfiguration.class })
 class EmailVerifyControllerTest {
-
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
     private VerifyService verifyService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private UserRefreshTokenRepository userRefreshTokenRepository;
+
+    @MockitoBean
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @MockitoBean
+    private JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @MockitoBean
+    private SecurityValidatorUtil securityValidatorUtil;
+
+    @MockitoBean
+    private RefreshTokenService refreshTokenService;
 
     private AuthProperties authProperties;
 
@@ -48,8 +73,8 @@ class EmailVerifyControllerTest {
     }
 
     @Test
-    @DisplayName("인증 메일 발송 성공")
-    @WithMockUser(username = "1")
+    @DisplayName("인증 메일 발송 성공 (ROLE_DRAFT 권한 소지)")
+    @WithMockUser(username = "1", roles = "DRAFT")
     void sendVerificationEmail_Success() throws Exception {
         // given
         EmailVerify mockVerify = EmailVerify.create(new UserId(1L), authProperties);
@@ -61,6 +86,17 @@ class EmailVerifyControllerTest {
                 .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("인증 메일 발송 실패 - 권한 불일치 (ROLE_DRAFT 권한 소지)")
+    @WithMockUser(username = "1", roles = "USER")
+    void sendVerificationEmail_Fail_Forbidden() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/auth/email/send")
+                .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
     }
 
     @Test
