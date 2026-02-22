@@ -20,13 +20,13 @@ import com.personal.interview.domain.user.controller.dto.SignUpRequest;
 import com.personal.interview.domain.user.controller.dto.SignUpResponse;
 import com.personal.interview.domain.user.service.UserService;
 import com.personal.interview.global.config.SecurityConfig;
+import com.personal.interview.util.validator.SecurityValidatorUtil;
 
 import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
 class UserControllerTest {
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -35,6 +35,24 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private com.personal.interview.global.security.JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private com.personal.interview.domain.auth.repository.UserRefreshTokenRepository userRefreshTokenRepository;
+
+    @MockitoBean
+    private com.personal.interview.global.security.handler.JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @MockitoBean
+    private com.personal.interview.global.security.handler.JwtAccessDeniedHandler jwtAccessDeniedHandler;
+
+    @MockitoBean
+    private SecurityValidatorUtil securityValidatorUtil;
+
+    @MockitoBean
+    private com.personal.interview.global.security.service.RefreshTokenService refreshTokenService;
 
     @Test
     void signUp_Success() throws Exception {
@@ -49,8 +67,8 @@ class UserControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andDo(print())
-            .andExpect(status().isOk());
+                .andDo(print())
+                .andExpect(status().isOk());
     }
 
     @Test
