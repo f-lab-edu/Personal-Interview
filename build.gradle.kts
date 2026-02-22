@@ -38,6 +38,14 @@ dependencies {
 	// Security
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+	
+	// AOP
+	implementation("org.aspectj:aspectjweaver:1.9.22.1")
+
+	// JWT
+	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
 	// DOCKER
 	implementation("org.springframework.boot:spring-boot-docker-compose")
