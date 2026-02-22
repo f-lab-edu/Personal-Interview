@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.personal.interview.domain.base.VoException;
 
@@ -27,10 +28,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ErrorResponse> handleDomainException(DomainException ex) {
         ErrorResponse response = ErrorResponse.builder()
-            .status(ex.getErrorCode().getStatus().value())
-            .code(ex.getErrorCode().getCode())
-            .message(ex.getMessage())
-            .build();
+                .status(ex.getErrorCode().getStatus().value())
+                .code(ex.getErrorCode().getCode())
+                .message(ex.getMessage())
+                .build();
 
         return new ResponseEntity<>(response, ex.getErrorCode().getStatus());
     }
@@ -41,10 +42,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VoException.class)
     public ResponseEntity<ErrorResponse> handleVoException(VoException ex) {
         ErrorResponse response = ErrorResponse.builder()
-            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-            .code(ex.getCode())
-            .message(ex.getMessage())
-            .build();
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .code(ex.getCode())
+                .message(ex.getMessage())
+                .build();
 
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -80,10 +81,10 @@ public class GlobalExceptionHandler {
         }
 
         ErrorResponse response = ErrorResponse.builder()
-            .status(HttpStatus.BAD_REQUEST.value())
-            .code("INVALID_INPUT_VALUE")
-            .message(message)
-            .build();
+                .status(HttpStatus.BAD_REQUEST.value())
+                .code("INVALID_INPUT_VALUE")
+                .message(message)
+                .build();
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
@@ -91,10 +92,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         ErrorResponse response = ErrorResponse.builder()
-            .status(HttpStatus.BAD_REQUEST.value())
-            .code("INVALID_INPUT")
-            .message(ex.getMessage())
-            .build();
+                .status(HttpStatus.BAD_REQUEST.value())
+                .code("INVALID_INPUT")
+                .message(ex.getMessage())
+                .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
