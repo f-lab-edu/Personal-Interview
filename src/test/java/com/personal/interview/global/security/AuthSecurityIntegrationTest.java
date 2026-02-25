@@ -30,7 +30,6 @@ import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.domain.auth.service.AuthService;
 import com.personal.interview.domain.auth.service.EmailVerifySender;
 import com.personal.interview.domain.user.entity.User;
-import com.personal.interview.domain.user.controller.dto.SignUpRequest;
 import com.personal.interview.domain.user.repository.UserRepository;
 import com.personal.interview.domain.user.UserFixture;
 import com.personal.interview.global.config.properties.JwtProperties;
@@ -115,8 +114,9 @@ class AuthSecurityIntegrationTest {
                         JsonNode json = objectMapper.readTree(responseBody);
                         String rawRefreshToken = json.get("refreshToken").asText();
 
-                        // DB 저장값은 해싱된 값이어야 한다
-                        assertThat(stored.getRefreshToken()).isEqualTo(AuthService.hashToken(rawRefreshToken));
+                        // DB 저장값은 SALT로 해싱된 값이어야 한다
+                        assertThat(stored.getRefreshToken()).isEqualTo(
+                                        AuthService.hashToken(rawRefreshToken, stored.getSalt()));
                 }
 
                 @Test
@@ -196,7 +196,7 @@ class AuthSecurityIntegrationTest {
                 void accessProtectedResource_ExpiredToken() throws Exception {
                         JwtProperties expiredProps = new JwtProperties(
                                         "myDefaultSecretKeyForDevelopmentPurposeOnly12345678901234567890",
-                                        -1L, -1L);
+                                        -1L, -1L, 10L);
                         JwtTokenProvider expiredProvider = new JwtTokenProvider(expiredProps);
                         String expiredToken = expiredProvider.createAccessToken(
                                         testUser.getId().longValue(), testUser.getRole().name());
@@ -219,10 +219,11 @@ class AuthSecurityIntegrationTest {
                         Long userId = testUser.getId().longValue();
                         String role = testUser.getRole().name();
 
-                        // 기존 Refresh Token 발급 및 DB 저장 (해싱)
+                        // 기존 Refresh Token 발급 및 DB 저장 (SALT + 해싱)
                         String originalRefreshToken = jwtTokenProvider.createRefreshToken(userId, role);
-                        String hashedToken = AuthService.hashToken(originalRefreshToken);
-                        UserRefreshToken stored = UserRefreshToken.create(new UserId(userId), hashedToken,
+                        String salt = AuthService.generateSalt();
+                        String hashedToken = AuthService.hashToken(originalRefreshToken, salt);
+                        UserRefreshToken stored = UserRefreshToken.create(new UserId(userId), hashedToken, salt,
                                         LocalDateTime.now().plusDays(7));
 
                         userRefreshTokenRepository.save(stored);
@@ -248,11 +249,12 @@ class AuthSecurityIntegrationTest {
                         JsonNode json = objectMapper.readTree(responseBody);
                         String newRefreshToken = json.get("refreshToken").asText();
 
-                        // DB에 새 해싱된 토큰이 저장되었는지 확인
+                        // DB에 새 해싱된 토큰이 저장되었는지 확인 (새 salt로 해싱됨)
                         UserRefreshToken updated = userRefreshTokenRepository
                                         .findByUserId(new UserId(userId))
                                         .orElseThrow();
-                        assertThat(updated.getRefreshToken()).isEqualTo(AuthService.hashToken(newRefreshToken));
+                        assertThat(updated.getRefreshToken()).isEqualTo(
+                                        AuthService.hashToken(newRefreshToken, updated.getSalt()));
                 }
 
                 @Test
@@ -267,16 +269,21 @@ class AuthSecurityIntegrationTest {
                         // old 토큰은 다른 만료시간을 가진 Provider로 생성하여 서로 다른 값을 보장한다.
                         JwtProperties altProps = new JwtProperties(
                                         "myDefaultSecretKeyForDevelopmentPurposeOnly12345678901234567890",
-                                        3600000L, 86400000L); // 1일 만료 (기본값 7일과 다르므로 다른 JWT 생성)
+                                        3600000L, 86400000L, 10L); // 1일 만료 (기본값 7일과 다르므로 다른 JWT 생성)
                         JwtTokenProvider altProvider = new JwtTokenProvider(altProps);
                         String oldRefreshToken = altProvider.createRefreshToken(userId, role);
                         String newRefreshToken = jwtTokenProvider.createRefreshToken(userId, role);
 
-                        // DB에는 새 토큰의 해시가 저장된 상태
-                        UserRefreshToken stored = UserRefreshToken.create(new UserId(userId),
-                                        AuthService.hashToken(newRefreshToken),
+                        // DB에는 새 토큰의 해시가 저장된 상태 (Grace Period 지난 후)
+                        String salt = AuthService.generateSalt();
+                        UserRefreshToken stored2 = UserRefreshToken.create(new UserId(userId),
+                                        AuthService.hashToken(newRefreshToken, salt), salt,
                                         LocalDateTime.now().plusDays(7));
-                        userRefreshTokenRepository.save(stored);
+                        // Grace Period 밖이어야 재사용이 탈취로 감지되므로 rotatedAt을 과거로 설정
+                        java.lang.reflect.Field createdAtField = UserRefreshToken.class.getDeclaredField("createdAt");
+                        createdAtField.setAccessible(true);
+                        createdAtField.set(stored2, LocalDateTime.now().minusMinutes(5));
+                        userRefreshTokenRepository.save(stored2);
                         em.flush();
                         em.clear();
 
@@ -307,15 +314,16 @@ class AuthSecurityIntegrationTest {
                         // 만료된 Refresh Token 생성
                         JwtProperties expiredProps = new JwtProperties(
                                         "myDefaultSecretKeyForDevelopmentPurposeOnly12345678901234567890",
-                                        -1L, -1L);
+                                        -1L, -1L, 10L);
                         JwtTokenProvider expiredProvider = new JwtTokenProvider(expiredProps);
                         String expiredRefreshToken = expiredProvider.createRefreshToken(userId, role);
 
                         // DB에 토큰 저장 (만료 감지 전 상태)
-                        UserRefreshToken stored = UserRefreshToken.create(new UserId(userId),
-                                        AuthService.hashToken(expiredRefreshToken),
+                        String salt = AuthService.generateSalt();
+                        UserRefreshToken stored3 = UserRefreshToken.create(new UserId(userId),
+                                        AuthService.hashToken(expiredRefreshToken, salt), salt,
                                         LocalDateTime.now().plusDays(7));
-                        userRefreshTokenRepository.save(stored);
+                        userRefreshTokenRepository.save(stored3);
                         em.flush();
                         em.clear();
 

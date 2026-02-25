@@ -4,7 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "app.jwt")
 public record JwtProperties(
-        String secretKey,
-        long accessExpirationMs,
-        long refreshExpirationMs) {
+                String secretKey,
+                long accessExpirationMs,
+                long refreshExpirationMs,
+                long refreshGracePeriodSeconds) {
 }

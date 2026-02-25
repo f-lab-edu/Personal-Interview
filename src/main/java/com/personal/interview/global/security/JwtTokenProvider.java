@@ -1,5 +1,7 @@
 package com.personal.interview.global.security;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 
@@ -11,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import com.personal.interview.global.config.properties.JwtProperties;
+import com.personal.interview.global.security.dto.TokenWithExpiry;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -20,15 +23,16 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtTokenProvider {
-
     private final SecretKey secretKey;
     private final long accessExpirationMs;
     private final long refreshExpirationMs;
+    private final long refreshGracePeriodSeconds;
 
     public JwtTokenProvider(JwtProperties jwtProperties) {
         this.secretKey = Keys.hmacShaKeyFor(jwtProperties.secretKey().getBytes());
         this.accessExpirationMs = jwtProperties.accessExpirationMs();
         this.refreshExpirationMs = jwtProperties.refreshExpirationMs();
+        this.refreshGracePeriodSeconds = jwtProperties.refreshGracePeriodSeconds();
     }
 
     public String createAccessToken(Long userId, String role) {
@@ -39,8 +43,24 @@ public class JwtTokenProvider {
         return createToken(userId, role, refreshExpirationMs);
     }
 
+    /**
+     * Refresh Token과 만료시간을 함께 반환합니다.
+     * 토큰 생성 시점의 만료시간을 단일 진실 소스(Single Version of Truth)로 제공합니다.
+     */
+    public TokenWithExpiry createRefreshTokenWithExpiry(Long userId, String role) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + refreshExpirationMs);
+        String token = buildToken(userId, role, now, expiry);
+        LocalDateTime expiresAt = LocalDateTime.ofInstant(expiry.toInstant(), ZoneId.systemDefault());
+        return new TokenWithExpiry(token, expiresAt);
+    }
+
     public long getRefreshExpirationMs() {
         return refreshExpirationMs;
+    }
+
+    public long getRefreshGracePeriodSeconds() {
+        return refreshGracePeriodSeconds;
     }
 
     public Authentication getAuthentication(String token) {
@@ -83,11 +103,14 @@ public class JwtTokenProvider {
     private String createToken(Long userId, String role, long expirationMs) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
+        return buildToken(userId, role, now, expiry);
+    }
 
+    private String buildToken(Long userId, String role, Date issuedAt, Date expiry) {
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("role", role)
-                .issuedAt(now)
+                .issuedAt(issuedAt)
                 .expiration(expiry)
                 .signWith(secretKey)
                 .compact();

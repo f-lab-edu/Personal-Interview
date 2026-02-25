@@ -1,14 +1,14 @@
 package com.personal.interview.global.security.aop;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.*;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -38,7 +37,7 @@ class AuthorizeAspectTest {
     private JoinPoint joinPoint;
 
     @Mock
-    private Authorize authorize;
+    private MethodSignature methodSignature;
 
     private SecurityContext originalContext;
 
@@ -59,50 +58,88 @@ class AuthorizeAspectTest {
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
+    // ── 테스트용 @Authorize 스텁 ──
+
+    @Authorize(UserRole.ROLE_DRAFT)
+    static class ClassLevelAuthorized {
+        public void someMethod() {
+        }
+    }
+
+    static class MethodLevelAuthorized {
+        @Authorize(UserRole.ROLE_USER)
+        public void protectedMethod() {
+        }
+
+        @Authorize({})
+        public void emptyRoleMethod() {
+        }
+    }
+
+    private void mockJoinPoint(Object target, String methodName) throws NoSuchMethodException {
+        Method method = target.getClass().getDeclaredMethod(methodName);
+        given(joinPoint.getSignature()).willReturn(methodSignature);
+        given(methodSignature.getMethod()).willReturn(method);
+        lenient().when(joinPoint.getTarget()).thenReturn(target);
+    }
+
     @Test
-    @DisplayName("인증 정보가 없으면 DomainException 이 발생한다")
-    void checkAuthorize_NoAuth() {
-        // given
+    @DisplayName("인증 정보가 없으면 DomainException이 발생한다")
+    void checkAuthorize_NoAuth() throws Exception {
         SecurityContextHolder.clearContext();
+        mockJoinPoint(new MethodLevelAuthorized(), "protectedMethod");
 
-        // when & then
-        assertThatThrownBy(() -> authorizeAspect.checkAuthorize(joinPoint, authorize))
-            .isInstanceOf(DomainException.class);
+        assertThatThrownBy(() -> authorizeAspect.checkAuthorize(joinPoint))
+                .isInstanceOf(DomainException.class);
     }
 
     @Test
-    @DisplayName("Authorize 에 명시된 권한이 빈 배열이면 무조건 통과한다")
-    void checkAuthorize_EmptyRoles() {
-        // given
+    @DisplayName("@Authorize에 명시된 권한이 빈 배열이면 무조건 통과한다")
+    void checkAuthorize_EmptyRoles() throws Exception {
         setAuthentication("ROLE_USER");
-        given(authorize.value()).willReturn(new UserRole[] {});
+        mockJoinPoint(new MethodLevelAuthorized(), "emptyRoleMethod");
 
-        // when & then
-        assertThatCode(() -> authorizeAspect.checkAuthorize(joinPoint, authorize))
+        assertThatCode(() -> authorizeAspect.checkAuthorize(joinPoint))
                 .doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("사용자가 요구된 권한을 가지고 있으면 통과한다")
-    void checkAuthorize_HasRole_Success() {
-        // given
+    @DisplayName("메서드 레벨 @Authorize: 사용자가 요구 권한을 가지면 통과한다")
+    void checkAuthorize_MethodLevel_HasRole_Success() throws Exception {
+        setAuthentication("ROLE_USER");
+        mockJoinPoint(new MethodLevelAuthorized(), "protectedMethod");
+
+        assertThatCode(() -> authorizeAspect.checkAuthorize(joinPoint))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("메서드 레벨 @Authorize: 사용자가 요구 권한이 없으면 DomainException이 발생한다")
+    void checkAuthorize_MethodLevel_NoRole_Fail() throws Exception {
+        setAuthentication("ROLE_ADMIN");
+        mockJoinPoint(new MethodLevelAuthorized(), "protectedMethod");
+
+        assertThatThrownBy(() -> authorizeAspect.checkAuthorize(joinPoint))
+                .isInstanceOf(DomainException.class);
+    }
+
+    @Test
+    @DisplayName("클래스 레벨 @Authorize: 메서드에 어노테이션이 없으면 클래스 레벨을 사용한다")
+    void checkAuthorize_ClassLevel_Fallback() throws Exception {
         setAuthentication("ROLE_DRAFT");
-        given(authorize.value()).willReturn(new UserRole[] { UserRole.ROLE_DRAFT, UserRole.ROLE_USER });
+        mockJoinPoint(new ClassLevelAuthorized(), "someMethod");
 
-        // when & then
-        assertThatCode(() -> authorizeAspect.checkAuthorize(joinPoint, authorize))
+        assertThatCode(() -> authorizeAspect.checkAuthorize(joinPoint))
                 .doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("사용자가 요구된 권한이 전혀 없으면 DomainException 이 발생한다")
-    void checkAuthorize_HasNoRole_Fail() {
-        // given
+    @DisplayName("클래스 레벨 @Authorize: 사용자 권한이 없으면 DomainException이 발생한다")
+    void checkAuthorize_ClassLevel_NoRole_Fail() throws Exception {
         setAuthentication("ROLE_USER");
-        given(authorize.value()).willReturn(new UserRole[] { UserRole.ROLE_DRAFT });
+        mockJoinPoint(new ClassLevelAuthorized(), "someMethod");
 
-        // when & then
-        assertThatThrownBy(() -> authorizeAspect.checkAuthorize(joinPoint, authorize))
-            .isInstanceOf(DomainException.class);
+        assertThatThrownBy(() -> authorizeAspect.checkAuthorize(joinPoint))
+                .isInstanceOf(DomainException.class);
     }
 }
