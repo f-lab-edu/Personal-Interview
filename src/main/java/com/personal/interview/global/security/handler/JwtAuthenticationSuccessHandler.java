@@ -1,8 +1,6 @@
 package com.personal.interview.global.security.handler;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -11,9 +9,6 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 
 import tools.jackson.databind.ObjectMapper;
 import com.personal.interview.domain.auth.controller.dto.TokenResponse;
-import com.personal.interview.domain.auth.entity.UserRefreshToken;
-import com.personal.interview.domain.auth.repository.UserRefreshTokenRepository;
-import com.personal.interview.domain.auth.service.AuthService;
 import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.domain.user.entity.vo.UserRole;
 import com.personal.interview.global.security.JwtTokenProvider;

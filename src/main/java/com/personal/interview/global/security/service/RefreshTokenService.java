@@ -21,17 +21,17 @@ public class RefreshTokenService {
 
 	@Transactional
 	public void rotateRefreshToken(UserId userId, String refreshToken) {
-		String hashedToken = AuthService.hashToken(refreshToken);
+		String salt = AuthService.generateSalt();
+		String hashedToken = AuthService.hashToken(refreshToken, salt);
 
-		// 2. 만료 시간 계산
 		LocalDateTime expiryAt = LocalDateTime.now()
-			.plusSeconds(jwtTokenProvider.getRefreshExpirationMs() / 1000);
+				.plusSeconds(jwtTokenProvider.getRefreshExpirationMs() / 1000);
 
-		// 3. 존재하면 업데이트, 없으면 새로 생성 (RTR)
+		// 존재하면 회전(이전 토큰 보관), 없으면 새로 생성
 		userRefreshTokenRepository.findByUserId(userId)
-			.ifPresentOrElse(
-				existing -> existing.updateRefreshToken(hashedToken, expiryAt),
-				() -> userRefreshTokenRepository.save(UserRefreshToken.create(userId, hashedToken, expiryAt))
-			);
+				.ifPresentOrElse(
+						existing -> existing.rotateToken(hashedToken, salt, expiryAt),
+						() -> userRefreshTokenRepository
+								.save(UserRefreshToken.create(userId, hashedToken, salt, expiryAt)));
 	}
 }

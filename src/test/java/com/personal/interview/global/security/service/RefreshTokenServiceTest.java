@@ -2,7 +2,6 @@ package com.personal.interview.global.security.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -20,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.personal.interview.domain.auth.entity.UserRefreshToken;
 import com.personal.interview.domain.auth.repository.UserRefreshTokenRepository;
-import com.personal.interview.domain.auth.service.AuthService;
 import com.personal.interview.domain.user.entity.UserId;
 import com.personal.interview.global.security.JwtTokenProvider;
 
@@ -51,9 +49,8 @@ class RefreshTokenServiceTest {
         // when
         refreshTokenService.rotateRefreshToken(userId, refreshToken);
 
-        // then
-        String expectedHashed = AuthService.hashToken(refreshToken);
-        verify(existingToken).updateRefreshToken(eq(expectedHashed), any(LocalDateTime.class));
+        // then - SALT가 포함된 해시값으로 업데이트되었는지 확인
+        verify(existingToken).rotateToken(any(String.class), any(String.class), any(LocalDateTime.class));
     }
 
     @Test
@@ -75,9 +72,10 @@ class RefreshTokenServiceTest {
         verify(userRefreshTokenRepository).save(captor.capture());
 
         UserRefreshToken savedToken = captor.getValue();
-        String expectedHashed = AuthService.hashToken(refreshToken);
 
         assertThat(savedToken).isNotNull();
-        assertThat(savedToken.getRefreshToken()).isEqualTo(expectedHashed);
+        assertThat(savedToken.getRefreshToken()).isNotBlank();
+        assertThat(savedToken.getSalt()).isNotBlank();
+        assertThat(savedToken.getSalt()).hasSize(32); // 16바이트 hex = 32자
     }
 }

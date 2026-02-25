@@ -20,7 +20,7 @@ class JwtTokenProviderTest {
 
     @BeforeEach
     void setUp() {
-        JwtProperties jwtProperties = new JwtProperties(SECRET_KEY, ACCESS_EXPIRATION_MS, REFRESH_EXPIRATION_MS);
+        JwtProperties jwtProperties = new JwtProperties(SECRET_KEY, ACCESS_EXPIRATION_MS, REFRESH_EXPIRATION_MS, 10L);
         jwtTokenProvider = new JwtTokenProvider(jwtProperties);
     }
 
@@ -72,7 +72,7 @@ class JwtTokenProviderTest {
         @DisplayName("만료된 토큰은 검증에 실패한다")
         void validateToken_Expired() {
             // 만료 시간이 -1ms인 토큰 생성용 Provider
-            JwtProperties expiredProps = new JwtProperties(SECRET_KEY, -1L, -1L);
+            JwtProperties expiredProps = new JwtProperties(SECRET_KEY, -1L, -1L, 10L);
             JwtTokenProvider expiredProvider = new JwtTokenProvider(expiredProps);
 
             String expiredToken = expiredProvider.createAccessToken(1L, "ROLE_USER");
@@ -97,7 +97,7 @@ class JwtTokenProviderTest {
         void validateToken_DifferentKey() {
             JwtProperties otherProps = new JwtProperties(
                     "anotherSecretKeyThatIsDifferentFromOriginal12345678901234567890",
-                    ACCESS_EXPIRATION_MS, REFRESH_EXPIRATION_MS);
+                    ACCESS_EXPIRATION_MS, REFRESH_EXPIRATION_MS, 10L);
             JwtTokenProvider otherProvider = new JwtTokenProvider(otherProps);
 
             String tokenFromOtherKey = otherProvider.createAccessToken(1L, "ROLE_USER");
@@ -140,7 +140,7 @@ class JwtTokenProviderTest {
         void getUserIdFromExpiredToken() {
             Long expectedUserId = 99L;
 
-            JwtProperties expiredProps = new JwtProperties(SECRET_KEY, -1L, -1L);
+            JwtProperties expiredProps = new JwtProperties(SECRET_KEY, -1L, -1L, 10L);
             JwtTokenProvider expiredProvider = new JwtTokenProvider(expiredProps);
             String expiredToken = expiredProvider.createAccessToken(expectedUserId, "ROLE_USER");
 

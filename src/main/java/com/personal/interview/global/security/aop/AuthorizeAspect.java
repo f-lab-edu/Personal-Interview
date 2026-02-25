@@ -5,7 +5,7 @@ import java.util.Arrays;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.springframework.security.access.AccessDeniedException;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -22,8 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class AuthorizeAspect {
 
-    @Before("@annotation(authorize)")
-    public void checkAuthorize(JoinPoint joinPoint, Authorize authorize) {
+    @Before("@annotation(com.personal.interview.global.security.annotation.Authorize) " +
+            "|| @within(com.personal.interview.global.security.annotation.Authorize)")
+    public void checkAuthorize(JoinPoint joinPoint) {
+        Authorize authorize = resolveAuthorize(joinPoint);
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -45,5 +48,22 @@ public class AuthorizeAspect {
                     Arrays.toString(requiredRoles), authentication.getAuthorities());
             throw DomainException.create(ErrorCode.ACCESS_DENIED);
         }
+    }
+
+    /**
+     * 메서드 레벨 → 클래스 레벨 순서로 @Authorize 어노테이션을 탐색합니다.
+     * 메서드에 직접 붙어 있으면 우선 적용하고, 없으면 클래스 레벨을 사용합니다.
+     */
+    private Authorize resolveAuthorize(JoinPoint joinPoint) {
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+
+        // 1. 메서드 레벨 어노테이션 확인
+        Authorize methodAnnotation = signature.getMethod().getAnnotation(Authorize.class);
+        if (methodAnnotation != null) {
+            return methodAnnotation;
+        }
+
+        // 2. 클래스 레벨 어노테이션 확인
+        return joinPoint.getTarget().getClass().getAnnotation(Authorize.class);
     }
 }

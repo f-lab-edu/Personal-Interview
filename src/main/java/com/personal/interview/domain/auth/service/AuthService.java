@@ -1,10 +1,14 @@
 package com.personal.interview.domain.auth.service;
 
+import static com.personal.interview.domain.user.entity.vo.UserRole.*;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.HexFormat;
 
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +23,9 @@ import com.personal.interview.global.security.JwtTokenProvider;
 import com.personal.interview.global.security.service.RefreshTokenService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -27,13 +33,38 @@ public class AuthService {
     private final UserRefreshTokenRepository userRefreshTokenRepository;
     private final RefreshTokenService refreshTokenService;
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     @Transactional
     public TokenResponse refresh(RefreshTokenRequest request) {
         String requestToken = request.refreshToken();
 
         var userId = validateTokenAndGetUserId(requestToken);
 
-        validateStoredToken(userId, requestToken);
+        UserRefreshToken storedToken = userRefreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() -> DomainException.create(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+
+        String requestTokenHash = hashToken(requestToken, storedToken.getSalt());
+        boolean tokenMatches = storedToken.getRefreshToken().equals(requestTokenHash);
+
+        // 토큰 해시 불일치 → grace period 내이면 동시 요청으로 판단
+        if (!tokenMatches) {
+            if (storedToken.isWithinGracePeriod(jwtTokenProvider.getRefreshGracePeriodSeconds())) {
+                log.info("Grace Period 내 동시 요청 감지 (userId: {}). 회전 없이 새 Access Token만 발급합니다.", userId);
+
+                String accessToken = jwtTokenProvider.createAccessToken(userId.longValue(), extractRole(requestToken));
+
+                return new TokenResponse(accessToken, requestToken);
+            }
+
+            userRefreshTokenRepository.deleteByUserId(userId);
+            throw DomainException.create(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
+        }
+
+        if (storedToken.isExpired()) {
+            userRefreshTokenRepository.deleteByUserId(userId);
+            throw DomainException.create(ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
 
         return rotateAndCreateTokens(userId, requestToken);
     }
@@ -47,60 +78,57 @@ public class AuthService {
         return new UserId(jwtTokenProvider.getUserId(requestToken));
     }
 
-    private void validateStoredToken(UserId userId, String requestToken) {
-        UserRefreshToken storedToken = userRefreshTokenRepository.findByUserId(userId)
-                .orElseThrow(() -> DomainException.create(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
-
-        if (!storedToken.getRefreshToken().equals(hashToken(requestToken))) {
-            userRefreshTokenRepository.deleteByUserId(userId);
-
-            throw DomainException.create(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
-        }
-
-        if (storedToken.isExpired()) {
-            userRefreshTokenRepository.deleteByUserId(userId);
-            throw DomainException.create(ErrorCode.REFRESH_TOKEN_EXPIRED);
-        }
-    }
-
     private TokenResponse rotateAndCreateTokens(UserId userId, String requestToken) {
-        String role = jwtTokenProvider.getAuthentication(requestToken)
-                .getAuthorities().stream()
-                .findFirst()
-                .map(Object::toString)
-                .orElse("ROLE_USER");
+        String role = extractRole(requestToken);
 
         String newAccessToken = jwtTokenProvider.createAccessToken(userId.longValue(), role);
         String newRefreshToken = jwtTokenProvider.createRefreshToken(userId.longValue(), role);
 
-        refreshTokenService.rotateRefreshToken(userId, newRefreshToken);
+        try {
+            refreshTokenService.rotateRefreshToken(userId, newRefreshToken);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.warn("RTR 낙관적 락 충돌 (userId: {}). Grace Period 내 요청으로 처리합니다.", userId);
+
+            return new TokenResponse(newAccessToken, requestToken);
+        }
 
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
 
-    /**
-     * 만료/위변조 토큰에서 userId를 추출하여 해당 사용자의 모든 세션을 무효화합니다.
-     */
+    private String extractRole(String token) {
+        return jwtTokenProvider.getAuthentication(token)
+                .getAuthorities().stream()
+                .findFirst()
+                .map(Object::toString)
+                .orElse(ROLE_DRAFT.name());
+    }
+
     private void handleSuspiciousToken(String token) {
         try {
             Long userId = jwtTokenProvider.getUserIdFromExpiredToken(token);
 
             userRefreshTokenRepository.deleteByUserId(new UserId(userId));
         } catch (Exception ignored) {
-            // userId 추출 불가능한 완전 손상 토큰은 무시
         }
     }
 
-    /**
-     * Refresh Token을 SHA-256으로 해싱합니다.
-     */
-    public static String hashToken(String token) {
+    public static String hashToken(String token, String salt) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+
+            byte[] hash = digest.digest((salt + token).getBytes(StandardCharsets.UTF_8));
+
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 알고리즘을 찾을 수 없습니다.", e);
         }
+    }
+
+    public static String generateSalt() {
+        byte[] salt = new byte[16];
+
+        SECURE_RANDOM.nextBytes(salt);
+
+        return HexFormat.of().formatHex(salt);
     }
 }
