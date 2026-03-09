@@ -13,8 +13,10 @@ import org.springframework.web.servlet.ModelAndView;
 import com.personal.interview.domain.auth.controller.dto.EmailVerifyResponse;
 import com.personal.interview.domain.auth.service.VerifyService;
 import com.personal.interview.domain.user.entity.UserId;
+import com.personal.interview.domain.user.entity.vo.UserRole;
 import com.personal.interview.global.exception.DomainException;
 import com.personal.interview.global.security.SecurityUtil;
+import com.personal.interview.global.security.annotation.Authorize;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +27,7 @@ public class EmailVerifyController {
 
 	private final VerifyService verifyService;
 
+	@Authorize(UserRole.ROLE_DRAFT)
 	@PostMapping("/send")
 	public ResponseEntity<EmailVerifyResponse> sendVerificationEmail() {
 		UserId userId = SecurityUtil.getCurrentUserId();

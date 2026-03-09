@@ -39,3 +39,8 @@ out/
 
 ### opencode 설정 ###
 AGENTS.md
+.plan/**
+
+### claudecode 설정 ###
+CLAUDE.md
+.claude/**

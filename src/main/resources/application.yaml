@@ -20,3 +20,8 @@ app:
     base-url: ${EMAIL_BASE_URL:http://localhost:8080}
     sender-email: ${EMAIL_SENDER:noreply@personal-interview.com}
     sender-name: Personal Interview
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:myDefaultSecretKeyForDevelopmentPurposeOnly12345678901234567890}
+    access-expiration-ms: 1800000  # 30분
+    refresh-expiration-ms: 604800000  # 7일
+    refresh-grace-period-seconds: 10  # RTR 동시성 유예 기간
